@@ -1,6 +1,21 @@
 import React from 'react';
 import FormModal from './FormModal'
 
+function parseJwt(token) {
+    try {
+        let base64Url = token.split('.')[1];
+        let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        let jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    }
+    catch (err) {
+
+      }
+
+    }
+
 class CallComponent extends React.Component {
     constructor(props) {
         super(props);
@@ -18,8 +33,14 @@ class CallComponent extends React.Component {
             resultMessage: "",
             offerid: "",
             saveMode: 0,
-            roleSelected: false
+            roleSelected: false,
+            token : ''  ,
+            LogIn : false  ,
+            LoginName : ''        
         }
+        this.onChangeToken = this.onChangeToken.bind(this);
+        this.onClickLogin = this.onClickLogin.bind(this);
+        // this.parseJwt = this.parseJwt.bind(this)
     }
     
     getOffers(currentJwt) {
@@ -58,15 +79,18 @@ class CallComponent extends React.Component {
         {
             isSalesRole = true;
             roleSelected = true;
-            currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJMb2NhbEpXVElzc3VlciIsImlhdCI6MTU3MzcyNzM5MSwiZXhwIjo0MDk4MjQ1Mzc4LCJhdWQiOiJvcGEtZXhhbXBsZS5jb20iLCJzdWIiOiJzYWxlc0BleGFtcGxlLmNvbSIsIkdpdmVuTmFtdyI6IkpvaG5ueSIsIlN1cm5hbWUiOiJTYWxlcyIsIkVtYWlsIjoianNhbGVzQGV4YW1wbGUuY29tIiwiUm9sZSI6IlNhbGVzIn0.UbHWQpCMwupzsFp8f0CQ4o_bJSVaBugKijhcURZ_Mko"
+            currentJwt = "Bearer "+ this.state.token            
+            // currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJMb2NhbEpXVElzc3VlciIsImlhdCI6MTU3MzcyNzM5MSwiZXhwIjo0MDk4MjQ1Mzc4LCJhdWQiOiJvcGEtZXhhbXBsZS5jb20iLCJzdWIiOiJzYWxlc0BleGFtcGxlLmNvbSIsIkdpdmVuTmFtdyI6IkpvaG5ueSIsIlN1cm5hbWUiOiJTYWxlcyIsIkVtYWlsIjoianNhbGVzQGV4YW1wbGUuY29tIiwiUm9sZSI6IlNhbGVzIn0.UbHWQpCMwupzsFp8f0CQ4o_bJSVaBugKijhcURZ_Mko"
         } else if (event.target.value === "2") {
             isSalesSupportRole = true;
             roleSelected = true;
-            currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJMb2NhbEpXVElzc3VlciIsImlhdCI6MTU3MzcyNzM5MSwiZXhwIjo0MDk4MjQ1Mzc4LCJhdWQiOiJvcGEtZXhhbXBsZS5jb20iLCJzdWIiOiJzYWxlc0BleGFtcGxlLmNvbSIsIkdpdmVuTmFtdyI6IlJvbm55IiwiU3VybmFtZSI6IkRlcHAiLCJFbWFpbCI6InJkZXBwQGV4YW1wbGUuY29tIiwiUm9sZSI6IlNhbGVzIFN1cHBvcnQifQ.idRAEBhxDVSIaBIfY_Hg2qR9g919JfRMQVNojBdwAIY"
+            currentJwt = "Bearer "+ this.state.token  
+            //currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJMb2NhbEpXVElzc3VlciIsImlhdCI6MTU3MzcyNzM5MSwiZXhwIjo0MDk4MjQ1Mzc4LCJhdWQiOiJvcGEtZXhhbXBsZS5jb20iLCJzdWIiOiJzYWxlc0BleGFtcGxlLmNvbSIsIkdpdmVuTmFtdyI6IlJvbm55IiwiU3VybmFtZSI6IkRlcHAiLCJFbWFpbCI6InJkZXBwQGV4YW1wbGUuY29tIiwiUm9sZSI6IlNhbGVzIFN1cHBvcnQifQ.idRAEBhxDVSIaBIfY_Hg2qR9g919JfRMQVNojBdwAIY"
         } else if (event.target.value === "3") {
             isSalesAdminRole = true;
             roleSelected = true;
-            currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE1NzQ2NjM3MDAsImV4cCI6NDA5OTE4NTMwMCwiYXVkIjoib3BhLWV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIkdpdmVuTmFtZSI6IkpvaG5ueSIsIlN1cm5hbWUiOiJSb2NrZXQiLCJFbWFpbCI6Impyb2NrZXRAZXhhbXBsZS5jb20iLCJSb2xlIjoiU2FsZXMgQWRtaW4ifQ._UtjZtowF3NNN3IF1t0LBHuzQhdfIfsO8jC-46GvbRM"
+            currentJwt = "Bearer "+ this.state.token  
+            // currentJwt = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE1NzQ2NjM3MDAsImV4cCI6NDA5OTE4NTMwMCwiYXVkIjoib3BhLWV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIkdpdmVuTmFtZSI6IkpvaG5ueSIsIlN1cm5hbWUiOiJSb2NrZXQiLCJFbWFpbCI6Impyb2NrZXRAZXhhbXBsZS5jb20iLCJSb2xlIjoiU2FsZXMgQWRtaW4ifQ._UtjZtowF3NNN3IF1t0LBHuzQhdfIfsO8jC-46GvbRM"
         }else {
             isSalesRole = false;
             isSalesSupportRole = false;
@@ -207,6 +231,32 @@ class CallComponent extends React.Component {
         let saveMode = "1"
         this.setState({offerid,title,customerid,segment,notes,saveMode})
      }
+
+    
+    
+    
+      onChangeToken(event) {    
+          this.setState({token: event.target.value}); 
+        }    
+    
+
+       onClickLogin(event) {        
+        if(event.target.name === "LogIn") { 
+        this.setState({LogIn: true})
+        if(this.state.token !== ''){
+          var result =   parseJwt(this.state.token)          
+          this.setState({LoginName : result.given_name })
+        }
+        else{            
+            this.setState({LogIn: false, token : ''}) 
+        }
+    
+        }
+        else  this.setState({LogIn: false, token : ''})    
+         
+       }    
+
+      
      
     render()  {
         let resultStatement;
@@ -224,14 +274,32 @@ class CallComponent extends React.Component {
         <div className="jumbotron">
             <div className="container">
                 {this.state.newTitle}
-                <h1 className="display-3">Hello, there!</h1>
-                <p>This is a very simple webpage simulating the various API calls a user will make. To start experimenting, select the role you want to use first!!</p>
-                <select className="browser-default custom-select" onChange = {this.changeRole}>
-                    <option defaultValue value="0">Select Role</option>
-                    <option value="1">Sales</option>
-                    <option value="2">Sales Support</option>
-                    <option value="3">Sales Admin</option>
-                </select>
+                { !(this.state.LogIn) &&
+                <div style={{display: "flex" , alignItems : "center"}}>                
+                    {/* <textarea onChange={this.onChangeToken} value={this.token} style={{ width: "70rem" }}></textarea> */}
+                    <input type="textarea" 
+                         name="textValue"
+                         style={{ width: "70rem", height: "3rem" , paddingLeft : "10px"}}
+                         value={this.state.token}
+                         onChange={this.onChangeToken}
+                     />
+                    <div style={{paddingLeft : "10px", paddingTop :"32px"}}>
+                        <button name='LogIn' onClick={this.onClickLogin}>Login</button>
+                    </div>
+                </div>
+                }
+                { this.state.LogIn &&
+                <>
+                <div style={{paddingLeft : "10px", paddingTop :"40px", display :"flex", justifyContent: "flex-end"}}>
+                        <button name='LogOut' onClick={this.onClickLogin}>Log Out</button>
+                    </div>
+                
+                <h1 className="display-3">Hello, {this.state.LoginName}</h1><p>This is a very simple webpage simulating the various API calls a user will make. To start experimenting, select the role you want to use first!!</p><select className="browser-default custom-select" onChange={this.changeRole}>
+                                <option defaultValue value="0">Select Role</option>
+                                <option value="1">Sales</option>
+                                <option value="2">Sales Support</option>
+                                <option value="3">Sales Admin</option>
+                            </select>
                 {this.state.isSalesRole && <><div className="alert-info pt-2 pl-2 mt-3 border border-dark"><p><strong>Sales Role : </strong> 
                     Sales Role can get, create and edit offers. However, deleting an offer is not allowed.</p></div>
                     </>}
@@ -241,6 +309,9 @@ class CallComponent extends React.Component {
                 {this.state.isSalesAdminRole && <><div className="alert-info pt-2 pl-2 mt-3 border border-dark"><p><strong>Sales Admin Role : </strong> 
                 Sales Admin Role has read only access to all offers. People in this role can read (Get) an offer and Delete an offer. However, creating / editing an offer is not allowed.</p></div>
                 </>}
+                </>
+                }
+    
             </div>
         </div>
 
